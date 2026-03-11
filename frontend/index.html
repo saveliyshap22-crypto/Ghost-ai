@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GhostAI Realtime</title>
+  <link rel="stylesheet" href="/frontend/css/main.css" />
+  <link rel="stylesheet" href="/frontend/css/animations.css" />
+  <link rel="stylesheet" href="/frontend/css/particles.css" />
+  <link rel="stylesheet" href="/frontend/css/modes/fast.css" />
+  <link rel="stylesheet" href="/frontend/css/modes/pro.css" />
+  <link rel="stylesheet" href="/frontend/css/modes/thinking.css" />
+</head>
+<body class="mode-fast">
+  <canvas id="particles"></canvas>
+  <div id="modeModal" class="modal show"></div>
+  <main class="layout glass">
+    <header>
+      <h1>GhostAI</h1>
+      <div id="modeIndicator">Ghost 1 Fast</div>
+      <div class="mode-buttons">
+        <button data-mode="fast">F Fast</button><button data-mode="pro">P Pro</button><button data-mode="thinking">T Thinking</button>
+      </div>
+    </header>
+    <section class="content">
+      <div class="chat-panel glass">
+        <div id="chatLog"></div>
+        <form id="chatForm">
+          <input id="prompt" placeholder="Введите запрос..." />
+          <button>Отправить</button>
+        </form>
+      </div>
+      <aside id="thinkingPanel" class="glass"></aside>
+      <aside class="sources glass">
+        <h3>Sources</h3>
+        <ul id="sourceList"></ul>
+      </aside>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4/dist/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/brain.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+  <script src="/frontend/js/typing-effect.js"></script>
+  <script src="/frontend/js/thinking-visualizer.js"></script>
+  <script src="/frontend/js/source-tracker.js"></script>
+  <script src="/frontend/js/particles-engine.js"></script>
+  <script src="/frontend/js/websocket.js"></script>
+  <script src="/frontend/js/mode-switcher.js"></script>
+  <script src="/frontend/js/app.js"></script>
+</body>
+</html>
