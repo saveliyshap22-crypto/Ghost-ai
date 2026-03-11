@@ -1,0 +1,2 @@
+body.mode-fast{--bg:#0a0f0a;--accent:#00ff88}
+body.mode-fast .mode-buttons button[data-mode='fast']{outline:2px solid #00ff88}
