@@ -39,7 +39,18 @@ class AIConfig:
     @classmethod
     def from_environment(cls) -> "AIConfig":
         raw_model = os.environ.get("GHOST_IDE_MODEL")
-        return cls(model_path=Path(raw_model).expanduser() if raw_model else None)
+        if raw_model:
+            return cls(model_path=Path(raw_model).expanduser())
+        return cls(model_path=_discover_default_model())
+
+
+def _discover_default_model() -> Path | None:
+    """Pick up a model downloaded by ghost.py (~/.ghostide/models/*.gguf)."""
+    models_dir = Path.home() / ".ghostide" / "models"
+    if not models_dir.exists():
+        return None
+    candidates = sorted(models_dir.glob("*.gguf"), key=lambda p: p.stat().st_size, reverse=True)
+    return candidates[0] if candidates else None
 
 
 class LocalAIAssistant:
@@ -56,11 +67,9 @@ class LocalAIAssistant:
         if llm is None:
             return (
                 "Local AI is not configured yet.\n\n"
-                "Install optional runtime and point Ghost IDE to a small GGUF model (≤3GB):\n"
-                "  pip install 'ghost-ide[ai]'\n"
-                "  export GHOST_IDE_MODEL=/path/to/model.gguf\n\n"
-                "Good offline choices: TinyLlama 1.1B Chat GGUF, Qwen2.5-Coder 1.5B GGUF, "
-                "or a heavily quantized Mistral-family GGUF that stays under 3GB.\n\n"
+                "Easiest fix: run `python ghost.py` — it installs llama-cpp-python and downloads "
+                "a small local GGUF model (Qwen2.5-Coder 1.5B, fits in <3GB VRAM) automatically.\n"
+                "Manual setup: pip install 'ghost-ide[ai]' and set GHOST_IDE_MODEL=/path/to/model.gguf.\n\n"
                 f"Question captured with project context:\n{question}\n\n"
                 f"Runtime detail: {self._load_error or 'no model path configured'}"
             )
@@ -95,6 +104,19 @@ class LocalAIAssistant:
         )
         return self._llm
 
+    def close(self) -> None:
+        """Unload the model and free its memory (called on IDE shutdown)."""
+        llm = self._llm
+        self._llm = None
+        if llm is None:
+            return
+        try:
+            close = getattr(llm, "close", None)
+            if callable(close):
+                close()
+        finally:
+            del llm
+
     def _build_prompt(self, question: str, project_root: Path) -> str:
         context = self._collect_project_context(project_root)
         return (
@@ -125,4 +147,3 @@ class LocalAIAssistant:
             rel = path.relative_to(project_root)
             parts.append(f"--- {rel} ---\n{snippet}")
         return "\n\n".join(parts) if parts else "No text project files found."
-

@@ -14,7 +14,22 @@ Ghost IDE is an open-source console IDE/framework written in Python. It provides
 - Action logs: `~/.ghostide/logs/ghostide.log`.
 - Custom commands through Python plugins.
 
-## Install
+## Quick start (one file, Windows/Linux/macOS)
+
+```bash
+python ghost.py
+```
+
+`ghost.py` does everything automatically:
+
+1. Installs missing dependencies (`prompt-toolkit`, `Pygments`, `llama-cpp-python` with prebuilt CPU wheels — no compiler needed on Windows).
+2. Downloads a small local model once: **Qwen2.5-Coder-1.5B-Instruct GGUF Q4_K_M (~1GB, fits in <3GB VRAM/RAM)** into `~/.ghostide/models`.
+3. Starts the console IDE with a dark cto.new-style theme.
+4. On exit (`/exit`, `Ctrl-Q`, or `Ctrl-C`) shuts everything down: unloads the model from memory and terminates any still-running shell child processes.
+
+The model runs fully locally — no internet needed after the first download.
+
+## Install (package mode)
 
 ```bash
 python -m pip install -e .
@@ -34,9 +49,7 @@ PYTHONPATH=src python -m ghostide
 
 ## Local AI setup
 
-Ghost IDE is offline-first. It does not download or call hosted LLMs by default.
-
-Install optional runtime:
+`python ghost.py` configures local AI automatically (downloads Qwen2.5-Coder-1.5B GGUF on first run). Manual setup is only needed if you want a different model:
 
 ```bash
 python -m pip install -e '.[ai]'

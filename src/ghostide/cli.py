@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import shlex
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,6 +13,7 @@ from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.lexers import PygmentsLexer
+from prompt_toolkit.styles import Style
 from pygments.lexers.shell import BashLexer
 
 from .ai import LocalAIAssistant
@@ -26,6 +28,34 @@ from .terminal import run_shell
 
 
 LOGGER = logging.getLogger(__name__)
+
+
+# cto.new-inspired dark theme: near-black background, violet accent, muted grays.
+THEME = Style.from_dict(
+    {
+        "prompt.brand": "#a78bfa bold",
+        "prompt.sep": "#3f3f46",
+        "prompt.project": "#e4e4e7 bold",
+        "prompt.arrow": "#a78bfa bold",
+        "completion-menu": "bg:#18181b #d4d4d8",
+        "completion-menu.completion.current": "bg:#7c3aed #ffffff",
+        "completion-menu.meta.completion": "bg:#18181b #71717a",
+        "completion-menu.meta.completion.current": "bg:#7c3aed #e9d5ff",
+        "scrollbar.background": "bg:#27272a",
+        "scrollbar.button": "bg:#52525b",
+        "bottom-toolbar": "bg:#111113 #71717a",
+    }
+)
+
+BANNER = """\
+\x1b[38;2;167;139;250m
+   ██████  ██   ██  ██████  ███████ ████████
+  ██       ██   ██ ██    ██ ██         ██
+  ██   ███ ███████ ██    ██ ███████    ██
+  ██    ██ ██   ██ ██    ██      ██    ██
+   ██████  ██   ██  ██████  ███████    ██
+\x1b[0m\x1b[38;2;113;113;122m  console IDE · local AI · offline-first\x1b[0m
+"""
 
 
 @dataclass(slots=True)
@@ -72,6 +102,8 @@ class GhostIDE:
             LOGGER.info("loaded plugins: %s", loaded)
 
     def run(self) -> int:
+        if os.name == "nt":
+            os.system("")  # enable ANSI escape sequences in legacy Windows consoles
         HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
         bindings = KeyBindings()
 
@@ -85,11 +117,25 @@ class GhostIDE:
             lexer=PygmentsLexer(BashLexer),
             key_bindings=bindings,
             complete_while_typing=True,
+            style=THEME,
+            bottom_toolbar=lambda: HTML(
+                " <b>/help</b> commands · <b>/ai</b> assistant · <b>/build</b> scaffold · <b>Ctrl-Q</b> quit "
+            ),
         )
-        print("Ghost IDE — type /help, /exit or Ctrl-Q. Shell commands run directly.")
+        print(BANNER)
+        model_state = "ready" if self.context.ai.config.model_path else "not configured (run ghost.py)"
+        print(f"  \x1b[38;2;113;113;122mmodel:\x1b[0m {model_state}")
+        print("  \x1b[38;2;113;113;122mtype /help for commands; anything else runs in the shell\x1b[0m\n")
         while not self.context.should_exit:
             try:
-                raw = session.prompt(HTML(f"<ansicyan>{self.context.project_root.name}</ansicyan> › "))
+                raw = session.prompt(
+                    [
+                        ("class:prompt.brand", "ghost"),
+                        ("class:prompt.sep", " · "),
+                        ("class:prompt.project", self.context.project_root.name),
+                        ("class:prompt.arrow", " ❯ "),
+                    ]
+                )
             except (KeyboardInterrupt, EOFError):
                 print()
                 break
@@ -239,4 +285,3 @@ class GhostIDE:
             ctx.config.projects.append(str(path))
         ctx.config.save()
         return 0
-
