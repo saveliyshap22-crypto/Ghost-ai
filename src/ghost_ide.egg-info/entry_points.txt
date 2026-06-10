@@ -1,0 +1,2 @@
+[console_scripts]
+ghostide = ghostide.__main__:main

@@ -1,0 +1,141 @@
+# Ghost IDE
+
+Ghost IDE is an open-source console IDE/framework written in Python. It provides a minimalist keyboard-friendly CLI, local/offline AI integration, project search, scaffolding, project management, logging, and a small plugin system.
+
+## Features
+
+- Console interface with command history, autocomplete, hotkeys, and syntax-highlighted shell input.
+- Built-in terminal: type any shell command without a slash to run it in the active project.
+- Offline AI command: `/ai <question>` uses a local GGUF model through optional `llama-cpp-python`.
+- Search command: `/search <query>` scans local project files and caches GitHub API repository results.
+- Scaffolding command: `/build <web|cli|library|api> [name]` creates starter files, dependencies, folders, and initializes git.
+- File manager commands: `/files [depth]`, `/open <path>`, `/cd <path>`.
+- Multi-project commands: `/projects list`, `/projects add <path>`, `/projects switch <path>`.
+- Action logs: `~/.ghostide/logs/ghostide.log`.
+- Custom commands through Python plugins.
+
+## Install
+
+```bash
+python -m pip install -e .
+```
+
+Run:
+
+```bash
+ghostide
+```
+
+Or without installation:
+
+```bash
+PYTHONPATH=src python -m ghostide
+```
+
+## Local AI setup
+
+Ghost IDE is offline-first. It does not download or call hosted LLMs by default.
+
+Install optional runtime:
+
+```bash
+python -m pip install -e '.[ai]'
+```
+
+Download a small open model in GGUF format that stays under 3GB, for example:
+
+- TinyLlama 1.1B Chat GGUF
+- Qwen2.5-Coder 1.5B GGUF
+- a heavily quantized Mistral-family GGUF under 3GB
+
+Then set:
+
+```bash
+export GHOST_IDE_MODEL=/absolute/path/to/model.gguf
+ghostide
+```
+
+Use:
+
+```text
+/ai explain this project
+/ai find likely bugs in the current file tree
+```
+
+The assistant builds a compact context from local project files and sends it to the local model only.
+
+## Commands
+
+```text
+/help                         show help
+/ai <question>                ask the local AI assistant
+/search <query>               search local code/docs and GitHub examples
+/build web my-app             scaffold a Vite React app
+/build cli my-tool            scaffold a Python CLI app
+/build library my-lib         scaffold a Python library
+/build api my-api             scaffold a FastAPI app
+/files 3                      show file tree
+/open README.md               print a file
+/projects add .               add current directory to project list
+/projects switch ~/work/app   switch active project
+/cd src                       change active directory/project root
+/exit                         quit
+```
+
+Anything that does not start with `/` is executed as a shell command in the active project:
+
+```text
+pytest
+git status
+npm run dev
+```
+
+## Plugins
+
+Put plugins in either:
+
+- `~/.ghostide/plugins/*.py`
+- `<project>/.ghostide/plugins/*.py`
+
+Each plugin exposes `setup(registry)` and registers commands:
+
+```python
+from ghostide.commands import Command
+
+
+def hello(args, ctx):
+    print("Hello from plugin")
+    return 0
+
+
+def setup(registry):
+    registry.register(Command("hello", "Say hello.", hello))
+```
+
+Restart `ghostide`, then run:
+
+```text
+/hello
+```
+
+## Development
+
+```bash
+python -m pip install -e .
+python -m compileall src tests
+python -m unittest discover -s tests
+```
+
+The code is intentionally modular:
+
+- `ghostide.cli` — REPL, keyboard UX, command dispatch
+- `ghostide.ai` — local/offline model adapter and project context builder
+- `ghostide.search` — local search, GitHub integration, SQLite cache
+- `ghostide.scaffold` — project templates and file generation
+- `ghostide.plugins` — plugin loading
+- `ghostide.files` — file manager helpers
+
+## License
+
+MIT
+
